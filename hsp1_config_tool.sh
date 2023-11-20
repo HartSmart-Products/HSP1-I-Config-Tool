@@ -16,9 +16,10 @@ PKG_INSTALL=("${PKG_MANAGER}" -qq install)
 PKG_COUNT="${PKG_MANAGER} -s -o Debug::NoLocking=true upgrade | grep -c ^Inst || true"
 
 # Repo URLs/Locations
-CONFIG_GIT_URL=""
+CONFIG_GIT_URL="https://github.com/HartSmart-Products/HSP1-I-Config-Tool.git"
 MJPG_GIT_URL="https://github.com/ArduCAM/mjpg-streamer.git"
 REPO_TEMP_DIR="/home/pi/.hsp/repo-temp"
+CONFIG_GIT_DIRECTORY="${REPO_TEMP_DIR}/hsp1-i-config-tool"
 
 # Install Locations
 CONFIG_DIR="/opt/dsf/sd"
@@ -384,11 +385,11 @@ build_install_mjpg_streamer() {
 mjpg_streamer_service() {
     printf "  %b Creating mjpg-streamer service..." "${INFO}"
 
-    install -T -m 0644 "${REPO_TEMP_DIR}/hsp1-i-config-tool/42-mjpg.rules" '/lib/udev/rules.d/42-mjpg.rules'
+    install -T -m 0644 "${CONFIG_GIT_DIRECTORY}/42-mjpg.rules" '/lib/udev/rules.d/42-mjpg.rules'
 
     udevadm control --reload-rules && udevadm trigger
 
-    install -T -m 0644 "${REPO_TEMP_DIR}/hsp1-i-config-tool/mjpg_streamer.service" '/etc/systemd/system/mjpg_streamer.service'
+    install -T -m 0644 "${CONFIG_GIT_DIRECTORY}/mjpg_streamer.service" '/etc/systemd/system/mjpg_streamer.service'
 
     if [[ -e '/etc/init.d/mjpg_streamer' ]]; then
         rm '/etc/init.d/mjpg_streamer'
@@ -419,9 +420,9 @@ onboard_config() {
 
     mkdir -p ${AUTOSTART_DIR}
 
-    install -T -m 0644 "${REPO_TEMP_DIR}/hsp1-i-config-tool/onboard-defaults.conf" '/usr/share/onboard/onboard-defaults.conf'
+    install -T -m 0644 "${CONFIG_GIT_DIRECTORY}/onboard-defaults.conf" '/usr/share/onboard/onboard-defaults.conf'
 
-    install -T -m 0755 "${REPO_TEMP_DIR}/hsp1-i-config-tool/onboard.desktop" "${AUTOSTART_DIR}/onboard.desktop"
+    install -T -m 0755 "${CONFIG_GIT_DIRECTORY}/onboard.desktop" "${AUTOSTART_DIR}/onboard.desktop"
 
     printf "%b  %b Installing onboard configs\\n" "${OVER}" "${TICK}"
 }
@@ -467,7 +468,7 @@ main() {
             install_dependencies "${MJPG_DEPENDENCIES[@]}"
             getGitFiles "${REPO_TEMP_DIR}/mjpg-streamer" ${MJPG_GIT_URL}
             build_install_mjpg_streamer
-            # Clone/update this repo
+            #getGitFiles ${CONFIG_GIT_DIRECTORY} ${CONFIG_GIT_URL}
             mjpg_streamer_service
         fi
 
@@ -475,7 +476,7 @@ main() {
             printf "Installing On-screen Keyboard\\n"
             install_dependencies "${ONBOARD_DEPENDENCIES[@]}"
             enable_gdi_accessibility
-            # Clone/update this repo
+            #getGitFiles ${CONFIG_GIT_DIRECTORY} ${CONFIG_GIT_URL}
             onboard_config
         fi
     fi
