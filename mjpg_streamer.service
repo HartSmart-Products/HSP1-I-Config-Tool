@@ -1,0 +1,14 @@
+[Unit]
+Description=MJPG Streamer Service
+BindsTo=dev-print_cam.device
+After=dev-print_cam.device
+
+[Service]
+ExecStartPre=/bin/sleep 5
+Type=simple
+ExecStart=mjpg_streamer -i 'input_uvc.so -d /dev/print_cam -r 1280x720' -o 'output_http.so --nocommands'
+RestartSec=15
+Restart=always
+
+[Install]
+WantedBy=multi-user.target dev-print_cam.device
