@@ -4,8 +4,8 @@
 set -e
 
 # Config values
-MJPG_DEPENDENCIES=(cmake libjpeg8-dev gcc g++)
-ONBOARD_DEPENDENCIES=(onboard)
+USTREAMER_DEPENDENCIES=(libevent-dev libjpeg9-dev libbsd-dev libasound2-dev libspeex-dev libspeexdsp-dev libopus-dev)
+ONBOARD_DEPENDENCIES=(at-spi2-core gir1.2-atspi-2.0 onboard)
 
 PKG_MANAGER="apt-get"
 # A variable to store the command used to update the package cache
@@ -16,10 +16,12 @@ PKG_INSTALL=("${PKG_MANAGER}" -qq install)
 PKG_COUNT="${PKG_MANAGER} -s -o Debug::NoLocking=true upgrade | grep -c ^Inst || true"
 
 # Repo URLs/Locations
-CONFIG_GIT_URL="https://github.com/HartSmart-Products/HSP1-I-Config-Tool.git"
-MJPG_GIT_URL="https://github.com/ArduCAM/mjpg-streamer.git"
+TOOL_GIT_URL="https://github.com/HartSmart-Products/HSP1-I-Config-Tool.git"
+CONFIG_GIT_URL=""
+USTREAMER_GIT_URL="https://github.com/pikvm/ustreamer.git"
 REPO_TEMP_DIR="/home/pi/.hsp/repo-temp"
-CONFIG_GIT_DIRECTORY="${REPO_TEMP_DIR}/hsp1-i-config-tool"
+TOOL_GIT_DIRECTORY="${REPO_TEMP_DIR}/hsp1-i-config-tool"
+CONFIG_GIT_DIRECTORY="${REPO_TEMP_DIR}/hsp1-i-config"
 
 # Install Locations
 CONFIG_DIR="/opt/dsf/sd"
@@ -44,19 +46,19 @@ else
 fi
 
 update_config=false
-install_mjpg=false
+install_ustreamer=false
 install_onboard=false
 print_help=false
 
 for var in "$@"; do
     case "$var" in
         "--update" | "-u" ) update_config=true;;
-        "--webcam" ) install_mjpg=true;;
+        "--print-cam" ) install_ustreamer=true;;
         "--keyboard" ) install_onboard=true;;
         "--help" | "-h" ) print_help=true;;
         "--all" | "-a" )
             update_config=true
-            install_mjpg=true
+            install_ustreamer=true
             install_onboard=true
             ;;
     esac
@@ -366,10 +368,10 @@ check_service_active() {
     fi
 }
 
-build_install_mjpg_streamer() {
-    printf "  %b Compiling mjpg-streamer..." "${INFO}"
+build_install_ustreamer() {
+    printf "  %b Compiling ustreamer..." "${INFO}"
 
-    pushd "${REPO_TEMP_DIR}/mjpg-streamer/mjpg-streamer-experimental" &> /dev/null || return 1
+    pushd "${REPO_TEMP_DIR}/ustreamer" &> /dev/null || return 1
 
     make clean &> /dev/null || return $?
 
@@ -377,34 +379,43 @@ build_install_mjpg_streamer() {
 
     make install &> /dev/null || return $?
 
-    printf "%b  %b Compiling mjpg-streamer\\n" "${OVER}" "${TICK}"
+    printf "%b  %b Compiling ustreamer\\n" "${OVER}" "${TICK}"
 
     popd &> /dev/null || return 1
 }
 
-mjpg_streamer_service() {
-    printf "  %b Creating mjpg-streamer service..." "${INFO}"
+ustreamer_service() {
+    printf "  %b Creating ustreamer service..." "${INFO}"
 
-    install -T -m 0644 "${CONFIG_GIT_DIRECTORY}/42-mjpg.rules" '/lib/udev/rules.d/42-mjpg.rules'
+    if id ustreamer >/dev/null 2>&1; then
+        if !(id -nG ustreamer | grep -qw "video"); then
+            sudo usermod -a -G video ustreamer
+        fi
+    else
+        sudo useradd -r ustreamer
+        sudo usermod -a -G video ustreamer
+    fi
+
+    install -T -m 0644 "${TOOL_GIT_DIRECTORY}/42-camera.rules" '/lib/udev/rules.d/42-camera.rules'
 
     udevadm control --reload-rules && udevadm trigger
 
-    install -T -m 0644 "${CONFIG_GIT_DIRECTORY}/mjpg_streamer.service" '/etc/systemd/system/mjpg_streamer.service'
+    install -T -m 0644 "${TOOL_GIT_DIRECTORY}/ustreamer.service" '/etc/systemd/system/ustreamer.service'
 
-    if [[ -e '/etc/init.d/mjpg_streamer' ]]; then
-        rm '/etc/init.d/mjpg_streamer'
-        update-rc.d mjpg_streamer remove
+    if [[ -e '/etc/init.d/ustreamer' ]]; then
+        rm '/etc/init.d/ustreamer'
+        update-rc.d ustreamer remove
     fi
 
     systemctl daemon-reload
 
-    enable_service mjpg_streamer
+    enable_service ustreamer
 
-    stop_service mjpg_streamer &> /dev/null
+    stop_service ustreamer &> /dev/null
 
-    restart_service mjpg_streamer
+    restart_service ustreamer
 
-    printf "%b  %b Creating mjpg-streamer service\\n" "${OVER}" "${TICK}"
+    printf "%b  %b Creating ustreamer service\\n" "${OVER}" "${TICK}"
 }
 
 enable_gdi_accessibility() {
@@ -420,9 +431,9 @@ onboard_config() {
 
     mkdir -p ${AUTOSTART_DIR}
 
-    install -T -m 0644 "${CONFIG_GIT_DIRECTORY}/onboard-defaults.conf" '/usr/share/onboard/onboard-defaults.conf'
+    install -T -m 0644 "${TOOL_GIT_DIRECTORY}/onboard-defaults.conf" '/usr/share/onboard/onboard-defaults.conf'
 
-    install -T -m 0755 "${CONFIG_GIT_DIRECTORY}/onboard.desktop" "${AUTOSTART_DIR}/onboard.desktop"
+    install -T -m 0755 "${TOOL_GIT_DIRECTORY}/onboard.desktop" "${AUTOSTART_DIR}/onboard.desktop"
 
     printf "%b  %b Installing onboard configs\\n" "${OVER}" "${TICK}"
 }
@@ -455,28 +466,28 @@ main() {
         # Do everything else
         if $update_config; then
             printf "Updating Config\\n"
+            #getGitFiles ${CONFIG_GIT_DIRECTORY} ${CONFIG_GIT_URL}
             # Download the latest config and move it into position.
             # Might need to own the directories
         fi
 
-        if $install_mjpg || $install_onboard; then
+        if $install_ustreamer || $install_onboard; then
             update_package_cache
+            #getGitFiles ${TOOL_GIT_DIRECTORY} ${TOOL_GIT_URL}
         fi
 
-        if $install_mjpg; then
+        if $install_ustreamer; then
             printf "Installing Webcam Service\\n"
-            install_dependencies "${MJPG_DEPENDENCIES[@]}"
-            getGitFiles "${REPO_TEMP_DIR}/mjpg-streamer" ${MJPG_GIT_URL}
-            build_install_mjpg_streamer
-            #getGitFiles ${CONFIG_GIT_DIRECTORY} ${CONFIG_GIT_URL}
-            mjpg_streamer_service
+            install_dependencies "${USTREAMER_DEPENDENCIES[@]}"
+            getGitFiles "${REPO_TEMP_DIR}/ustreamer" ${USTREAMER_GIT_URL}
+            build_install_ustreamer
+            ustreamer_service
         fi
 
         if $install_onboard; then
             printf "Installing On-screen Keyboard\\n"
             install_dependencies "${ONBOARD_DEPENDENCIES[@]}"
             enable_gdi_accessibility
-            #getGitFiles ${CONFIG_GIT_DIRECTORY} ${CONFIG_GIT_URL}
             onboard_config
         fi
     fi
