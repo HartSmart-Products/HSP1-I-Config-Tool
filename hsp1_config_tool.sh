@@ -19,7 +19,7 @@ PKG_COUNT="${PKG_MANAGER} -s -o Debug::NoLocking=true upgrade | grep -c ^Inst ||
 TOOL_GIT_URL="https://github.com/HartSmart-Products/HSP1-I-Config-Tool.git"
 CONFIG_GIT_URL=""
 USTREAMER_GIT_URL="https://github.com/pikvm/ustreamer.git"
-REPO_TEMP_DIR="/home/pi/.hsp/repo-temp"
+REPO_TEMP_DIR="/home/pi/.hsp/temp/repos"
 TOOL_GIT_DIRECTORY="${REPO_TEMP_DIR}/hsp1-i-config-tool"
 CONFIG_GIT_DIRECTORY="${REPO_TEMP_DIR}/hsp1-i-config"
 

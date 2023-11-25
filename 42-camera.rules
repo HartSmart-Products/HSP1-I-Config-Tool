@@ -1,1 +1,1 @@
-KERNEL=="video0", SUBSYSTEM=="video4linux", KERNELS=="1-1.4", ATTRS{idVendor}=="0c45", ATTRS{idProduct}=="6369", SYMLINK+="print-cam", TAG+="systemd"
+KERNEL=="video0", SUBSYSTEM=="video4linux", ATTRS{idVendor}=="0c45", ATTRS{idProduct}=="6369", SYMLINK+="print-cam", TAG+="systemd"
