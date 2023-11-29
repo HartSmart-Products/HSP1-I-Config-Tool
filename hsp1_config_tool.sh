@@ -45,6 +45,9 @@ else
     OVER="\\r\\033[K"
 fi
 
+update_hostname=false
+set_dpi=false
+disable_bluetooth=false
 update_config=false
 install_ustreamer=false
 install_onboard=false
@@ -60,6 +63,9 @@ for var in "$@"; do
             update_config=true
             install_ustreamer=true
             install_onboard=true
+            disable_bluetooth=true
+            update_hostname=true
+            set_dpi=true
             ;;
     esac
 done
@@ -438,6 +444,46 @@ onboard_config() {
     printf "%b  %b Installing onboard configs\\n" "${OVER}" "${TICK}"
 }
 
+update_hostname() {
+    printf "  %b Updating Hostname..." "${INFO}"
+
+    if [[ $(hostname -s) = 'pi' ]]; then
+        hostnamectl set-hostname 'HSP1-I' &> /dev/null
+        printf "%b  %b Updating Hostname\\n" "${OVER}" "${TICK}"
+
+        return 0
+    fi
+
+    printf "%b  %b Hostname already set\\n" "${OVER}" "${INFO}"
+}
+
+set_dpi() {
+    printf "  %b Setting DPI..." "${INFO}"
+
+    if ! [ -f '/home/pi/.Xresources' ]; then
+        install -T -m 0644 "${TOOL_GIT_DIRECTORY}/.Xresources" '/home/pi/.Xresources'
+        printf "%b  %b Setting DPI\\n" "${OVER}" "${TICK}"
+
+        return 0
+    fi
+
+    printf "%b  %b DPI already set\\n" "${OVER}" "${INFO}"
+}
+
+disable_bluetooth() {
+    printf "  %b Disabling Bluetooth..." "${INFO}"
+
+    if ! grep -Fxq "# Disable Bluetooth" '/boot/config.txt'; then
+        echo -e "# Disable Bluetooth\ndtoverlay=disable-bt\n" >> '/boot/config.txt'
+
+        systemctl disable hciuart.service &> /dev/null
+
+        systemctl disable bluetooth.service &> /dev/null
+    fi
+
+    printf "%b  %b Disabling Bluetooth\\n" "${OVER}" "${TICK}"
+}
+
 main() {
     local str="Root user check"
     printf "\\n"
@@ -464,6 +510,18 @@ main() {
     else
         mkdir -p ${REPO_TEMP_DIR}
         # Do everything else
+        if $update_hostname; then
+            update_hostname
+        fi
+
+        if $set_dpi; then
+            set_dpi
+        fi
+
+        if $disable_bluetooth; then
+            disable_bluetooth
+        fi
+
         if $update_config; then
             printf "Updating Config\\n"
             #getGitFiles ${CONFIG_GIT_DIRECTORY} ${CONFIG_GIT_URL}
