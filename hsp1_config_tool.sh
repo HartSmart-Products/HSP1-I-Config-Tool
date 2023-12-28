@@ -21,7 +21,6 @@ CONFIG_GIT_URL="https://github.com/HartSmart-Products/HSP1-I-SD-Image.git"
 USTREAMER_GIT_URL="https://github.com/pikvm/ustreamer.git"
 REPO_TEMP_DIR="/home/pi/.hsp/temp/repos"
 TOOL_GIT_DIRECTORY="${REPO_TEMP_DIR}/hsp1-i-config-tool"
-CONFIG_GIT_DIRECTORY="${REPO_TEMP_DIR}/hsp1-i-config"
 
 # Install Locations
 CONFIG_DIR="/opt/dsf/sd"
@@ -374,6 +373,13 @@ check_service_active() {
     fi
 }
 
+install_config() {
+    printf "  %b Installing config..." "${INFO}"
+    # Check config directory to see if it is a git repo. If not, then we gotta delete what's there and clone the config repo there.
+    # If it is a repo, then stash the uncommited stuff (should primarily be machine-specific, may include user-mods), pull the changes,
+    # and pop the stash. Stashing may be "unsafe", so it may be a good idea to handle a stash pop-gone bad.
+}
+
 build_install_ustreamer() {
     printf "  %b Compiling ustreamer..." "${INFO}"
 
@@ -484,33 +490,49 @@ disable_bluetooth() {
     printf "%b  %b Disabling Bluetooth\\n" "${OVER}" "${TICK}"
 }
 
+
 main() {
-    local str="Root user check"
-    printf "\\n"
-
-    if [[ "${EUID}" -eq 0 ]]; then
-        # Running with sudo, continue
-        printf "  %b %s\\n" "${TICK}" "${str}"
-    else
-        if is_command sudo ; then
-            exec sudo bash "$0" "$@"
-        else
-            # Otherwise, tell the user they need to run the script as root, and bail
-            printf "  %b Sudo is needed to install dependencies\\n\\n" "${INFO}"
-            printf "  %b %bPlease re-run this as root${COL_NC}\\n" "${INFO}" "${COL_LIGHT_RED}"
-            exit 1
-        fi
-    fi
-
-    printf "HSP1-I Config Tool\\n\\n"
-
     if [[ "${print_help}" = true ]]; then
         # Only print help and then exit
-        printf "Help Output\\n"
+        help_text="---------------------------------------------------------------
+The following parameters can be passed to this script:
+
+[-a | --all ].........: Do everything. Installs/updates the 
+                        configuration, and installs support
+                        components.
+[-h | --help ]........: Outputs a help dialog with options.
+[-u | --update ]......: Updates the config files. Won't
+                        overwrite machine-specific files.
+[--keyboard ].........: Installs the onscreen keyboard and
+                        configuration files.
+[--print-cam ]........: Installs the camera streamer software
+                        and configures the streamer service
+                        and camera configuration.
+---------------------------------------------------------------\n"
+        printf "%b" "${help_text}"
     else
+        local str="Root user check"
+        printf "\\n"
+
+        if [[ "${EUID}" -eq 0 ]]; then
+            # Running with sudo, continue
+            printf "  %b %s\\n" "${TICK}" "${str}"
+        else
+            if is_command sudo ; then
+                exec sudo bash "$0" "$@"
+            else
+                # Otherwise, tell the user they need to run the script as root, and bail
+                printf "  %b Sudo is needed to install dependencies\\n\\n" "${INFO}"
+                printf "  %b %bPlease re-run this as root${COL_NC}\\n" "${INFO}" "${COL_LIGHT_RED}"
+                exit 1
+          fi
+        fi
+
+        printf "HSP1-I Config Tool\\n\\n"
+
         mkdir -p ${REPO_TEMP_DIR}
         getGitFiles ${TOOL_GIT_DIRECTORY} ${TOOL_GIT_URL}
-        
+
         # Do everything else
         if $update_hostname; then
             update_hostname
@@ -526,8 +548,7 @@ main() {
 
         if $update_config; then
             printf "Updating Config\\n"
-            #getGitFiles ${CONFIG_GIT_DIRECTORY} ${CONFIG_GIT_URL}
-            # Download the latest config and move it into position.
+            install_config
             # Might need to own the directories
         fi
 
