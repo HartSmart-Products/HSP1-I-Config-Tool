@@ -509,6 +509,8 @@ main() {
         printf "Help Output\\n"
     else
         mkdir -p ${REPO_TEMP_DIR}
+        getGitFiles ${TOOL_GIT_DIRECTORY} ${TOOL_GIT_URL}
+        
         # Do everything else
         if $update_hostname; then
             update_hostname
@@ -531,7 +533,6 @@ main() {
 
         if $install_ustreamer || $install_onboard; then
             update_package_cache
-            #getGitFiles ${TOOL_GIT_DIRECTORY} ${TOOL_GIT_URL}
         fi
 
         if $install_ustreamer; then
