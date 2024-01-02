@@ -124,13 +124,6 @@ make_repo() {
     git clone -q --depth 20 "${remoteRepo}" "${directory}" &> /dev/null || return $?
     # Move into the directory that was passed as an argument
     pushd "${directory}" &> /dev/null || return 1
-    # Check current branch. If it is master, then reset to the latest available tag.
-    # In case extra commits have been added after tagging/release (i.e in case of metadata updates/README.MD tweaks)
-    curBranch=$(git rev-parse --abbrev-ref HEAD)
-    if [[ "${curBranch}" == "master" ]]; then
-        # If we're calling make_repo() then it should always be master, we may not need to check.
-        git reset --hard --quiet "$(git describe --abbrev=0 --tags)" || return $?
-    fi
     # Show a colored message showing it's status
     printf "%b  %b %s\\n" "${OVER}" "${TICK}" "${str}"
     # Data in the repositories is public anyway so we can make it readable by everyone (+r to keep executable permission if already set by git)
@@ -147,7 +140,6 @@ update_repo() {
     # but since they are local, their scope does not go beyond this function
     # This helps prevent the wrong value from being assigned if you were to set the variable as a GLOBAL one
     local directory="${1}"
-    local curBranch
 
     # A variable to store the message we want to display;
     # Again, it's useful to store these in variables in case we need to reuse or change the message;
@@ -162,16 +154,29 @@ update_repo() {
     git clean --quiet --force -d || true # Okay for already clean directory
     # Pull the latest commits
     git pull --no-rebase --quiet &> /dev/null || return $?
-    # Check current branch. If it is master, then reset to the latest available tag.
-    # In case extra commits have been added after tagging/release (i.e in case of metadata updates/README.MD tweaks)
-    curBranch=$(git rev-parse --abbrev-ref HEAD)
-    if [[ "${curBranch}" == "master" ]]; then
-        git reset --hard --quiet "$(git describe --abbrev=0 --tags)" || return $?
-    fi
     # Show a completion message
     printf "%b  %b %s\\n" "${OVER}" "${TICK}" "${str}"
     # Data in the repositories is public anyway so we can make it readable by everyone (+r to keep executable permission if already set by git)
     chmod -R a+rX "${directory}"
+    # Move back into the original directory
+    popd &> /dev/null || return 1
+    return 0
+}
+
+rebase_repo() {
+    # Setup named variables for the git repos
+    # We need the directory
+    local directory="${1}"
+    # A variable to store the message we want to display;
+    local str="Update repo in ${1}"
+    # Move into the directory that was passed as an argument
+    pushd "${directory}" &> /dev/null || return 1
+    # Let the user know what's happening
+    printf "  %b %s..." "${INFO}" "${str}"
+    # Pull the latest commits
+    git pull --rebase --autostash --quiet &> /dev/null || return $?
+    # Show a completion message
+    printf "%b  %b %s\\n" "${OVER}" "${TICK}" "${str}"
     # Move back into the original directory
     popd &> /dev/null || return 1
     return 0
@@ -374,10 +379,29 @@ check_service_active() {
 }
 
 install_config() {
-    printf "  %b Installing config..." "${INFO}"
-    # Check config directory to see if it is a git repo. If not, then we gotta delete what's there and clone the config repo there.
-    # If it is a repo, then stash the uncommited stuff (should primarily be machine-specific, may include user-mods), pull the changes,
-    # and pop the stash. Stashing may be "unsafe", so it may be a good idea to handle a stash pop-gone bad.
+	if is_repo ${CONFIG_DIR}; then
+		printf "  %b Updating config..." "${INFO}"
+		
+		rebase_repo ${CONFIG_DIR} ${CONFIG_GIT_URL}
+		
+		printf "%b  %b Updating config\\n" "${OVER}" "${TICK}"
+	else
+		printf "  %b Installing config..." "${INFO}"
+		
+		rm -rf $CONFIG_DIR &> /dev/null
+		
+		getGitFiles ${CONFIG_DIR} ${CONFIG_GIT_URL}
+		
+		mkdir "${CONFIG_DIR}/gcodes"
+		mkdir "${CONFIG_DIR}/firmware"
+		mkdir "${CONFIG_DIR}/www"
+		
+		chown dsf:dsf -R -f ${CONFIG_DIR}
+		
+		printf "%b  %b Installing config\\n" "${OVER}" "${TICK}"
+
+        return 0
+	fi
 }
 
 build_install_ustreamer() {
@@ -394,6 +418,8 @@ build_install_ustreamer() {
     printf "%b  %b Compiling ustreamer\\n" "${OVER}" "${TICK}"
 
     popd &> /dev/null || return 1
+
+    return 0
 }
 
 ustreamer_service() {
