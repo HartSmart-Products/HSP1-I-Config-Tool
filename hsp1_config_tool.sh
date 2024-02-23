@@ -398,6 +398,8 @@ install_config() {
 		
 		chown dsf:dsf -R -f ${CONFIG_DIR}
 		
+		sudo -u pi git config --global --add safe.directory "${CONFIG_DIR}"
+		
 		printf "%b  %b Installing config\\n" "${OVER}" "${TICK}"
 
         return 0
@@ -459,7 +461,7 @@ ustreamer_service() {
 enable_gdi_accessibility() {
     # May want to reboot after this, check if it's set and advise the user
     if [[ $(gsettings get org.gnome.desktop.interface toolkit-accessibility) == "false" ]]; then
-        gsettings set org.gnome.desktop.interface toolkit-accessibility true
+        sudo -u pi gsettings set org.gnome.desktop.interface toolkit-accessibility true
         printf "%b  %b Configured gnome accessibility\\n" "${OVER}" "${TICK}"
     fi
 }
@@ -575,7 +577,6 @@ The following parameters can be passed to this script:
         if $update_config; then
             printf "Updating Config\\n"
             install_config
-            # Might need to own the directories
         fi
 
         if $install_ustreamer || $install_onboard; then
