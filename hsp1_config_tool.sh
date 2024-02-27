@@ -394,7 +394,7 @@ install_config() {
 		
 		mkdir "${CONFIG_DIR}/gcodes"
 		mkdir "${CONFIG_DIR}/firmware"
-		mkdir "${CONFIG_DIR}/www"
+		ln -s /opt/dsf/dwc "${CONFIG_DIR}/www"
 		
 		chown dsf:dsf -R -f ${CONFIG_DIR}
 		
