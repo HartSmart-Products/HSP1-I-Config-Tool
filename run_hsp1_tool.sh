@@ -125,8 +125,6 @@ getGitFiles() {
 main() {
     mkdir -p ${REPO_TEMP_DIR}
     getGitFiles ${TOOL_GIT_DIRECTORY} ${TOOL_GIT_URL}
-
-    chmod +x "${TOOL_GIT_DIRECTORY}/hsp1_config_tool.sh"
     
     bash "${TOOL_GIT_DIRECTORY}/hsp1_config_tool.sh" "$@"
 }
