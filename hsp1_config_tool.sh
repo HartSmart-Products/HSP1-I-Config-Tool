@@ -16,11 +16,9 @@ PKG_INSTALL=("${PKG_MANAGER}" -qq install)
 PKG_COUNT="${PKG_MANAGER} -s -o Debug::NoLocking=true upgrade | grep -c ^Inst || true"
 
 # Repo URLs/Locations
-TOOL_GIT_URL="https://github.com/HartSmart-Products/HSP1-I-Config-Tool.git"
 CONFIG_GIT_URL="https://github.com/HartSmart-Products/HSP1-I-SD-Image.git"
 USTREAMER_GIT_URL="https://github.com/pikvm/ustreamer.git"
 REPO_TEMP_DIR="/home/pi/.hsp/temp/repos"
-TOOL_GIT_DIRECTORY="${REPO_TEMP_DIR}/hsp1-i-config-tool"
 
 # Install Locations
 CONFIG_DIR="/opt/dsf/sd"
@@ -557,9 +555,6 @@ The following parameters can be passed to this script:
         fi
 
         printf "HSP1-I Config Tool\\n\\n"
-
-        mkdir -p ${REPO_TEMP_DIR}
-        getGitFiles ${TOOL_GIT_DIRECTORY} ${TOOL_GIT_URL}
 
         # Do everything else
         if $update_hostname; then
