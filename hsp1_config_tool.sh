@@ -435,10 +435,6 @@ ustreamer_service() {
         sudo usermod -a -G video ustreamer
     fi
 
-    install -T -m 0644 "${TOOL_GIT_DIRECTORY}/42-camera.rules" '/lib/udev/rules.d/42-camera.rules'
-
-    udevadm control --reload-rules && udevadm trigger
-
     install -T -m 0644 "${TOOL_GIT_DIRECTORY}/ustreamer.service" '/etc/systemd/system/ustreamer.service'
 
     if [[ -e '/etc/init.d/ustreamer' ]]; then

@@ -1,14 +1,10 @@
 [Unit]
 Description=Ustreamer Print Cam Service
-After=network.target dev-print_cam.device
-BindsTo=dev-print_cam.device
+After=network.target
 
 [Service]
 User=ustreamer
-ExecStartPre=/bin/sleep 5
-ExecStart=/usr/local/bin/ustreamer --log-level 0 --device /dev/print-cam --host=0.0.0.0 --port=8080 -r 1920x1080 -m MJPEG -c HW -q 100
-RestartSec=15
-Restart=always
+ExecStart=/usr/local/bin/ustreamer --log-level 0 --device /dev/v4l/by-id/usb-Sonix_Technology_Co.__Ltd._USB_2.0_Camera-video-index0 --host=0.0.0.0 --port=8080 -r 1920x1080 -m MJPEG -c HW -q 80
 
 [Install]
-WantedBy=multi-user.target dev-print_cam.device
+WantedBy=multi-user.target
