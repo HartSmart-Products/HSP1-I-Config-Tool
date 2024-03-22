@@ -19,6 +19,7 @@ PKG_COUNT="${PKG_MANAGER} -s -o Debug::NoLocking=true upgrade | grep -c ^Inst ||
 CONFIG_GIT_URL="https://github.com/HartSmart-Products/HSP1-I-SD-Image.git"
 USTREAMER_GIT_URL="https://github.com/pikvm/ustreamer.git"
 REPO_TEMP_DIR="/home/pi/.hsp/temp/repos"
+TOOL_GIT_DIRECTORY="${REPO_TEMP_DIR}/hsp1-i-config-tool"
 
 # Install Locations
 CONFIG_DIR="/opt/dsf/sd"
