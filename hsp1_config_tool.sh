@@ -567,8 +567,8 @@ The following parameters can be passed to this script:
         fi
 
         if $update_config; then
-            printf "Updating Config\\n"
-            install_config
+            printf "Not Updating Config\\n"
+            #install_config
         fi
 
         if $install_ustreamer || $install_onboard; then
