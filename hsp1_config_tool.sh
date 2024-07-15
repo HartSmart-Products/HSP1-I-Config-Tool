@@ -4,7 +4,7 @@
 set -e
 
 # Config values
-USTREAMER_DEPENDENCIES=(libevent-dev libjpeg9-dev libbsd-dev libasound2-dev libspeex-dev libspeexdsp-dev libopus-dev)
+USTREAMER_DEPENDENCIES=(libevent-dev libjpeg62-turbo-dev libbsd-dev libasound2-dev libspeex-dev libspeexdsp-dev libopus-dev)
 ONBOARD_DEPENDENCIES=(at-spi2-core gir1.2-atspi-2.0 onboard rpi-chromium-mods)
 
 PKG_MANAGER="apt-get"
